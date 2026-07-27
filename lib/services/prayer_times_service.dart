@@ -1,0 +1,13 @@
+import 'package:adhan/adhan.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+class NextPrayerInfo { final String name; final DateTime time; final Duration remaining; const NextPrayerInfo({required this.name, required this.time, required this.remaining}); }
+class PrayerTimesService { static const _methodKey='calculation_method_key'; static const calculationMethods={'egyptian':'Egyptian','muslim_world_league':'Muslim World League','umm_al_qura':'Umm Al-Qura','karachi':'Karachi','north_america':'ISNA / North America'};
+  static Future<String> getCalculationMethodKey() async { final p=await SharedPreferences.getInstance(); return p.getString(_methodKey) ?? 'egyptian'; }
+  static Future<void> setCalculationMethodKey(String key) async { final p=await SharedPreferences.getInstance(); await p.setString(_methodKey,key); }
+  static CalculationParameters _params(String k){ switch(k){ case 'muslim_world_league': return CalculationMethod.muslim_world_league.getParameters(); case 'umm_al_qura': return CalculationMethod.umm_al_qura.getParameters(); case 'karachi': return CalculationMethod.karachi.getParameters(); case 'north_america': return CalculationMethod.north_america.getParameters(); default: return CalculationMethod.egyptian.getParameters(); } }
+  static Future<PrayerTimes?> getPrayerTimes() async { try { if(!await Geolocator.isLocationServiceEnabled()) return null; var perm=await Geolocator.checkPermission(); if(perm==LocationPermission.denied) perm=await Geolocator.requestPermission(); if(perm==LocationPermission.denied||perm==LocationPermission.deniedForever) return null; final pos=await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high); final params=_params(await getCalculationMethodKey())..madhab=Madhab.shafi; return PrayerTimes.today(Coordinates(pos.latitude,pos.longitude), params); } catch(_){ return null; } }
+  static NextPrayerInfo? getNextPrayer(PrayerTimes t){ final now=DateTime.now(); final m={'الفجر':t.fajr,'الظهر':t.dhuhr,'العصر':t.asr,'المغرب':t.maghrib,'العشاء':t.isha}; for(final e in m.entries){ if(e.value.isAfter(now)) return NextPrayerInfo(name:e.key,time:e.value,remaining:e.value.difference(now)); } final tf=t.fajr.add(const Duration(days:1)); return NextPrayerInfo(name:'الفجر',time:tf,remaining:tf.difference(now)); }
+  static String formatTime(DateTime t)=>'${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}';
+  static String formatDuration(Duration d)=>'${d.inHours.toString().padLeft(2,'0')}:${d.inMinutes.remainder(60).toString().padLeft(2,'0')}:${d.inSeconds.remainder(60).toString().padLeft(2,'0')}';
+}

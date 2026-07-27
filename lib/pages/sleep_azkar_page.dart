@@ -1,0 +1,2 @@
+import 'package:flutter/material.dart';
+class SleepAzkarPage extends StatelessWidget{const SleepAzkarPage({super.key});@override Widget build(BuildContext context)=>ListView(padding:const EdgeInsets.all(16),children:const [Card(child:ListTile(title:Text('باسمك اللهم أموت وأحيا'))),Card(child:ListTile(title:Text('اللهم قني عذابك يوم تبعث عبادك'))),Card(child:ListTile(title:Text('المعوذات وآية الكرسي')))]);}
